@@ -1,7 +1,7 @@
 [project]
 name = "sched-agent"
 version = "0.1.0"
-description = "Meeting & Catering Coordination Agent"
+description = "Meeting Availability Coordination Agent"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

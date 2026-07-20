@@ -6,7 +6,7 @@ The centralized Orchestrator Agent (the cognitive frontend) for the Luncher plat
 
 ## Child tools
 The Orchestrator acts as the "cognitive frontend" or user gateway, delegating specialized sub-tasks to the backend agents:
-1. **`sched_agent`**: Queried via A2A to perform team schedule checks, manage preferences, and book catering.
+1. **`sched_agent`**: Queried via A2A to perform team schedule checks, manage availability preferences, and book meetings.
 (strat_agent is removed from this repo for the moment)
 ---
 
@@ -36,7 +36,12 @@ uv run adk web app --port 8082
    ```
 2. Deploy the agent to Agent Runtime:
    ```bash
-   gcloud run deploy sched-agent --project luncher-davidstanke --region us-central1 --source . --memory 4Gi --cpu 1 --min-instances 1 --max-instances 10 --concurrency 8 --allow-unauthenticated --no-cpu-throttling
+   gcloud run deploy sched-agent \
+      --source=. \
+      --project=luncher-davidstanke \
+      --region=us-central1 \
+      --update-env-vars APP_URL=https://sched-agent-98226488336.us-central1.run.app \
+      --allow-unauthenticated
    ```
 ### Step 2: Deploy `luncher_agent`
 (Uses hard-coded sched_agent URL from Dave's project)

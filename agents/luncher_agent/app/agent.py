@@ -18,7 +18,7 @@ def get_agent_card_url(base_url: str) -> str:
 # Instantiate A2A connectors to the specialized sub-agents
 scheduling_agent_connector = RemoteA2aAgent(
     name="scheduling_agent",
-    description="Interactively schedules team meetings, checks dietary preferences/schedules, and books catering.",
+    description="Interactively schedules team meetings and coordinates team member availability.",
     agent_card=get_agent_card_url(SCHED_AGENT_URL)
 )
 
@@ -32,7 +32,7 @@ luncher_agent = Agent(
         "to schedule team lunches that are strategically aligned with corporate priorities.\n\n"
         
         "Your available tools:\n"
-        "1. 'scheduling_agent' - Use this to manage team schedules, check/update dietary preferences, and finalize bookings.\n\n"
+        "1. 'scheduling_agent' - Use this to manage team schedules, check/update availability preferences, and finalize bookings.\n\n"
         
         "COORDINATION PROTOCOL:\n"
         "- Delegate to the scheduling_agent to identify the optimal overlapping time slot for the team based on those priorities.\n"
