@@ -1,0 +1,73 @@
+[
+  {
+    "name": "Alice",
+    "timezone": "America/New_York",
+    "preferred_time_of_day": "morning",
+    "dietary_restrictions": [
+      "Vegan"
+    ],
+    "cuisine_preferences": [
+      "Mexican",
+      "Healthy"
+    ],
+    "weekly_availability": {
+      "Monday": [
+        "09:00-11:00",
+        "14:00-15:00"
+      ],
+      "Tuesday": [
+        "13:00-15:00"
+      ],
+      "Wednesday": [
+        "10:00-12:00"
+      ]
+    }
+  },
+  {
+    "name": "Bob",
+    "timezone": "America/New_York",
+    "preferred_time_of_day": "afternoon",
+    "dietary_restrictions": [],
+    "cuisine_preferences": [
+      "Burgers",
+      "Mexican",
+      "Asian"
+    ],
+    "weekly_availability": {
+      "Monday": [
+        "10:00-12:00",
+        "15:00-17:00"
+      ],
+      "Tuesday": [
+        "14:00-16:00"
+      ],
+      "Wednesday": [
+        "09:00-11:00"
+      ]
+    }
+  },
+  {
+    "name": "Charlie",
+    "timezone": "America/New_York",
+    "preferred_time_of_day": "afternoon",
+    "dietary_restrictions": [
+      "Gluten-Free"
+    ],
+    "cuisine_preferences": [
+      "Healthy",
+      "Mexican",
+      "Asian"
+    ],
+    "weekly_availability": {
+      "Monday": [
+        "10:00-11:30"
+      ],
+      "Tuesday": [
+        "11:00-13:00"
+      ],
+      "Wednesday": [
+        "14:00-16:00"
+      ]
+    }
+  }
+]

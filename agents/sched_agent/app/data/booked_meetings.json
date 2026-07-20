@@ -1,0 +1,23 @@
+[
+  {
+    "booking_id": "bk_1784215460",
+    "time_slot": "Monday 10:00-11:00 AM",
+    "catering_restaurant": "Fiesta Tacos",
+    "reason": "",
+    "booked_at": "2026-07-16T15:24:20.171208"
+  },
+  {
+    "booking_id": "bk_1784318703",
+    "time_slot": "Monday 10:00-11:00 AM",
+    "catering_restaurant": "Green Garden",
+    "reason": "Review OmniChef Smart Oven launch and other product launch priorities.",
+    "booked_at": "2026-07-17T16:05:03.746012"
+  },
+  {
+    "booking_id": "bk_1784323589",
+    "time_slot": "Monday 10:00-11:00 AM",
+    "catering_restaurant": "Green Garden",
+    "reason": "Review the GeniCo OmniChef launch",
+    "booked_at": "2026-07-17T17:26:29.983206"
+  }
+]
