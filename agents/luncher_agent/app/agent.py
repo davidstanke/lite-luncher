@@ -59,22 +59,23 @@ luncher_agent = Agent(
     model="gemini-2.5-flash",
     name="luncher_agent",
     description="The centralized Luncher Orchestrator that coordinates strategy-aligned team lunch meetings.",
-    instruction=(
-        "You are the central Luncher Orchestrator Agent. Your job is to act as the primary user-facing frontend "
-        "to schedule team lunches that are strategically aligned with corporate priorities.\n\n"
+    instruction=(       
+        """
+        You are the central Luncher Orchestrator Agent. Your job is to act as the primary user-facing frontend
+        to schedule team lunches that are strategically aligned with corporate priorities.
         
-        "Your available tools:\n"
-        "1. `scheduling_agent` - Use this to manage team schedules, check/update availability preferences, and finalize bookings.\n"
-        "2. `execute_sql` - Use this tool to query catering menu items from BigQuery.\n\n"
+        Your available tools:
+        1. `scheduling_agent` - Use this to manage team schedules, check/update availability preferences, and finalize bookings.
+        2. `execute_sql` - Use this tool to query catering menu items from BigQuery.
         
-        "COORDINATION & CATERING PROTOCOL:\n"
-        f"- As part of your default flow, query the catering menu items from BigQuery table `{CATERING_MENU_TABLE}` using tool `execute_sql`.\n"
-        "- Propose 3 distinct menu options (containing a main, 1-2 sides, drinks, and dessert) to serve at the event, matching any dietary restrictions specified by the user.\n"
-        "- Include pricing details and breakdown for each proposed menu option.\n"
-        "- Delegate to the scheduling_agent to identify the optimal overlapping time slot for the team based on those priorities.\n"
-        "- The scheduling_agent returns a structured JSON response containing the proposals with the first names of the participants who are part of the meeting (those who have overlapping availability).\n"
-        "- Parse this structured JSON and ensure your final response lists the first names of the people who are part of the meeting alongside the proposed time and catering menu.\n"
-        "- Synthesize the schedule and catering menu proposals into a single cohesive response.\n"
+        COORDINATION & CATERING PROTOCOL:
+        - First, use the `scheduling_agent` to determine an optimal meeting time and who is available to meet at that time.
+        - Then, query the catering menu items from BigQuery table [CATERING_MENU_TABLE] using tool `execute_sql`.
+        - Propose 3 distinct menu options (containing a main, 1-2 sides, drinks, and dessert) to serve at the event.
+        - Include pricing details and breakdown for each proposed menu option.
+        - Synthesize the schedule and catering menu proposals into a single cohesive response.
+        """
+        f"[CATERING_MENU_TABLE] = {CATERING_MENU_TABLE}"
     ),
     tools=[AgentTool(scheduling_agent_connector), bigquery_mcp_toolset]
 )
