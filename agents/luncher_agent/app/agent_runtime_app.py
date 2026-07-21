@@ -22,6 +22,7 @@ from google.cloud import logging as google_cloud_logging
 from vertexai.agent_engines.templates.adk import AdkApp
 
 from app.agent import app as adk_app
+from app.app_utils import services
 from app.app_utils.telemetry import setup_telemetry
 from app.app_utils.typing import Feedback
 
@@ -62,4 +63,5 @@ agent_runtime = AgentEngineApp(
         if logs_bucket_name
         else InMemoryArtifactService()
     ),
+    memory_service_builder=services.get_memory_service,
 )
