@@ -155,7 +155,7 @@ if os.getenv("GOOGLE_CLOUD_LOCATION"):
 # Define the ADK Agent
 scheduling_agent = Agent(
     model=Gemini(
-        model="gemini-2.5-flash",
+        model="gemini-3.6-flash",
         client_kwargs=client_kwargs
     ),
     name="scheduling_agent",

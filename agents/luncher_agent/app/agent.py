@@ -78,7 +78,7 @@ save_food_preference_tool = FunctionTool(save_food_preference)
 
 # Define the central Luncher Orchestrator
 luncher_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.6-flash",
     name="luncher_agent",
     description="The centralized Luncher Orchestrator that coordinates strategy-aligned team lunch meetings.",
     instruction=(       
@@ -89,18 +89,21 @@ luncher_agent = Agent(
         ROUTING AND PREFERENCE SAVING PROTOCOL:
         - If the user prompt is a user preference (e.g., "Alice is allergic to dairy" or "Bob dislikes spicy food"), call the `save_food_preference` tool to save it to memory, then dynamically thank the user and confirm the saved preference. Do NOT perform any scheduling, meeting coordination, or menu queries in this case.
 
-        COORDINATION & CATERING PROTOCOL:
-        - If the user request is a scheduling request:
-          1. Call the `scheduling_agent` to determine an optimal meeting time and who is available to meet (attendees).
-          2. For each attendee returned by the scheduling agent, use the `load_memory` tool with their name (e.g. query: "Alice food preferences", "Bob food preferences") to retrieve any saved food preferences, dietary restrictions, or allergies.
-          3. Query the catering menu items from BigQuery table [CATERING_MENU_TABLE] using the tool `execute_sql`.
-          4. Propose 3 distinct menu options (containing a main, 1-2 sides, drinks, and dessert) to serve at the event.
-          5. Tailor the proposed menu options according to the food preferences of the attendees (e.g., if a attendee is allergic to dairy, do not include dairy items in their menu option; if they dislike spicy food, avoid spicy options).
-          6. Include pricing details and breakdown for each proposed menu option.
-          7. Synthesize the schedule and catering menu proposals into a single cohesive response.
-          8. At the end of the scheduling response:
-             - Indicate any food preferences that were used to inform menu choices (e.g., "Food preferences considered: Alice (dairy allergy)").
-             - Inform the user that they can specify team member food preferences at any time, in a format like "Alice is allergic to dairy."
+        COORDINATION & CATERING PIPELINE (EXECUTE IN EXACTLY 4 SEQUENTIAL STEPS):
+        - If the user request is a scheduling request, follow this exact linear execution pipeline. In each step, output a very brief (1 line) emoji-prefixed status message BEFORE calling the tool:
+          STEP 1: Output "📅 Checking team member availability..." and call `scheduling_agent` EXACTLY ONCE to determine the meeting time and attendee list.
+          STEP 2: Output "🥗 Fetching saved dietary preferences..." and call `load_memory` EXACTLY ONCE with a consolidated query (e.g. query: "food preferences and dietary restrictions") to fetch all team member preferences in a single call.
+          STEP 3: Output "🍽️ Searching and filtering catering menu options..." and call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
+          STEP 4: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a single final response.
+
+        CRITICAL EFFICIENCY & ANTI-REINVOCATION RULES:
+        - Do NOT invoke `scheduling_agent`, `load_memory`, or `execute_sql` more than once per user request.
+        - Do NOT perform N separate `load_memory` queries for each individual attendee; fetch all preferences in 1 query in Step 2.
+        - Do NOT execute exploratory SQL queries; issue exactly 1 filtered SQL query in Step 3.
+        - At the end of the scheduling response:
+          - List the team members who are included in the meeting.
+          - Indicate any food preferences that were used to inform menu choices (e.g., "Food preferences considered: Alice (dairy allergy)").
+          - Inform the user that they can specify team member food preferences at any time, in a format like "<PERSON> is allergic to dairy." (where <PERSON> is a random choice from the team members at this meeting)
         """
         f"[CATERING_MENU_TABLE] = {CATERING_MENU_TABLE}"
     ),
