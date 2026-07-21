@@ -72,6 +72,8 @@ luncher_agent = Agent(
         "- Propose 3 distinct menu options (containing a main, 1-2 sides, drinks, and dessert) to serve at the event, matching any dietary restrictions specified by the user.\n"
         "- Include pricing details and breakdown for each proposed menu option.\n"
         "- Delegate to the scheduling_agent to identify the optimal overlapping time slot for the team based on those priorities.\n"
+        "- The scheduling_agent returns a structured JSON response containing the proposals with the first names of the participants who are part of the meeting (those who have overlapping availability).\n"
+        "- Parse this structured JSON and ensure your final response lists the first names of the people who are part of the meeting alongside the proposed time and catering menu.\n"
         "- Synthesize the schedule and catering menu proposals into a single cohesive response.\n"
     ),
     tools=[AgentTool(scheduling_agent_connector), bigquery_mcp_toolset]

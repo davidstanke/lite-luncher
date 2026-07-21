@@ -2,10 +2,18 @@ import os
 import json
 import uvicorn
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 from google.adk.models import Gemini
 
 from google.adk.agents import Agent
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
+
+class MeetingProposal(BaseModel):
+    timeslot: str = Field(description="The proposed meeting day and time slot.")
+    participants: list[str] = Field(description="The first names of the team members who have overlapping availability for this slot.")
+
+class SchedulingResponse(BaseModel):
+    proposals: list[MeetingProposal] = Field(description="List of one or more meeting proposals.")
 
 # Load environment variables
 load_dotenv()
@@ -68,14 +76,13 @@ scheduling_agent = Agent(
         CRITICAL BEHAVIOR RULES:
         - STEP 1: Always load the team members using 'get_team_members' on your first turn.
         - STEP 2: Find overlapping weekly availabilities among all members.
-        - STEP 3 (BEST OPTION PROPOSAL): You must propose EXACTLY ONE optimal recommendation first. Keep it simple, clear, and
-        conversational. Do NOT dump all possible options or overload the user.
+        - STEP 3 (BEST OPTION PROPOSAL): You must propose EXACTLY ONE optimal recommendation first. Include the proposed timeslot and the list of first names of all team members who have overlapping availability for that slot in the structured output.
 
         - OPTIONAL STEP (ALTERNATIVE PROPOSALS): If you have already made a best option proposal, you may be asked
-        for additional possibilities. In this case, propose up to 5 alternative timeslots. These alternative
-        proposals may be suboptimal.
+        for additional possibilities. In this case, propose up to 5 alternative timeslots. For each alternative proposal, include the proposed timeslot and the list of first names of all team members who have overlapping availability for that slot.
         """
     ),
+    output_schema=SchedulingResponse,
     tools=[
         get_team_members
     ],
