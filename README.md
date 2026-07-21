@@ -157,6 +157,9 @@ Once your infrastructure is ready, you can build and deploy your customized Flas
 
 ---
 
+## Configuring catering menu MCP service
+See data/catering/README.md
+
 ## 🤖 Running agents locally
 See agents/README.md
 
