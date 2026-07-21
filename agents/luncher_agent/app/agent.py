@@ -29,7 +29,7 @@ scheduling_agent_connector = RemoteA2aAgent(
 
 
 # Auth for connecting to BQ MCP
-def get_auth_header() -> dict[str, str]:
+def get_auth_header(context=None) -> dict[str, str]:
     """Retrieves standard Google Cloud Application Default Credentials."""
     credentials, _ = google.auth.default(
         scopes=["https://www.googleapis.com/auth/bigquery"]
@@ -64,11 +64,11 @@ luncher_agent = Agent(
         "to schedule team lunches that are strategically aligned with corporate priorities.\n\n"
         
         "Your available tools:\n"
-        "1. 'scheduling_agent' - Use this to manage team schedules, check/update availability preferences, and finalize bookings.\n"
-        "2. 'execute_sql_readonly' - Use this tool to query catering menu items from BigQuery.\n\n"
+        "1. `scheduling_agent` - Use this to manage team schedules, check/update availability preferences, and finalize bookings.\n"
+        "2. `execute_sql` - Use this tool to query catering menu items from BigQuery.\n\n"
         
         "COORDINATION & CATERING PROTOCOL:\n"
-        f"- As part of your default flow, query the catering menu items from BigQuery table `{CATERING_MENU_TABLE}` using tool `execute_sql_readonly`.\n"
+        f"- As part of your default flow, query the catering menu items from BigQuery table `{CATERING_MENU_TABLE}` using tool `execute_sql`.\n"
         "- Propose 3 distinct menu options (containing a main, 1-2 sides, drinks, and dessert) to serve at the event, matching any dietary restrictions specified by the user.\n"
         "- Include pricing details and breakdown for each proposed menu option.\n"
         "- Delegate to the scheduling_agent to identify the optimal overlapping time slot for the team based on those priorities.\n"

@@ -203,7 +203,7 @@ for item_list in [mains, sides_salads, beverages, desserts]:
         item_counter += 1
 
 script_dir = Path(__file__).resolve().parent
-output_path = script_dir.parent / "data" / "catering_menu.json"
+output_path = script_dir.parent.parent / "data" / "catering_menu.json"
 output_path.parent.mkdir(parents=True, exist_ok=True)
 
 with open(output_path, "w", encoding="utf-8") as f:
