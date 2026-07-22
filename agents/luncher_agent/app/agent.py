@@ -77,6 +77,27 @@ async def save_food_preference(preference: str, tool_context: ToolContext) -> st
 save_food_preference_tool = FunctionTool(save_food_preference)
 
 
+async def save_favorite_menu(menu_title: str, menu_details: str, tool_context: ToolContext) -> str:
+    """Saves a favorite menu option to the memory store.
+
+    Args:
+        menu_title: The title or name of the favorite menu option (e.g., 'Taco Tuesday' or 'Option 1 - Mediterranean Delights').
+        menu_details: The items included in the menu (main course, sides, drinks, dessert).
+    """
+    favorite_str = f"Favorite Menu: {menu_title} - {menu_details}"
+    content = Content(parts=[Part(text=favorite_str)], role="user")
+    try:
+        entry = MemoryEntry(content=content)
+        await tool_context.add_memory(memories=[entry])
+    except NotImplementedError:
+        from google.adk.events import Event
+        event = Event(content=content, author="user")
+        await tool_context.add_events_to_memory(events=[event])
+    return f"Saved favorite menu: {menu_title}"
+
+save_favorite_menu_tool = FunctionTool(save_favorite_menu)
+
+
 # Define the central Luncher Orchestrator
 luncher_agent = Agent(
     model="gemini-3.6-flash",
@@ -87,27 +108,32 @@ luncher_agent = Agent(
         You are the central Luncher Orchestrator Agent. Your job is to act as the primary user-facing frontend
         to coordinate strategy-aligned team lunch meetings.
 
-        ROUTING AND PREFERENCE SAVING PROTOCOL:
+        ROUTING AND PREFERENCE / FAVORITE SAVING PROTOCOL:
         - If the user prompt is a user preference (e.g., "Alice is allergic to dairy" or "Bob dislikes spicy food"), call the `save_food_preference` tool to save it to memory, then dynamically thank the user and confirm the saved preference. Do NOT perform any scheduling, meeting coordination, or menu queries in this case.
+        - If the user prompt requests saving a favorite menu (e.g., "Save Option 1 as a favorite" or "Save Taco Tuesday as favorite"), call the `save_favorite_menu` tool to save it to memory, then dynamically thank the user and confirm the saved favorite menu. Do NOT perform any scheduling, meeting coordination, or menu queries in this case.
 
         PROGRESS REPORTING PROTOCOL:
-        - Before invoking each tool, output a single line to the user updating them on your status (e.g., "📅 Checking team member availability...", "🥗 Fetching saved dietary preferences...", "🍽️ Searching and filtering catering menu options...", or "💾 Saving food preference...").
+        - Before invoking each tool, output a single line to the user updating them on your status (e.g., "📅 Checking team member availability...", "🥗 Fetching saved dietary preferences...", "⭐ Fetching saved favorite menus...", "🍽️ Searching and filtering catering menu options...", "💾 Saving food preference...", or "💾 Saving favorite menu...").
 
-        COORDINATION & CATERING PIPELINE (EXECUTE IN EXACTLY 4 SEQUENTIAL STEPS):
+        COORDINATION & CATERING PIPELINE (EXECUTE IN EXACTLY 5 SEQUENTIAL STEPS):
         - If the user request is a scheduling request, follow this exact linear execution pipeline:
           STEP 1: Call `scheduling_agent` EXACTLY ONCE to determine the meeting time and attendee list.
-          STEP 2: Call `load_memory` EXACTLY ONCE with a consolidated query (e.g. query: "food preferences and dietary restrictions") to fetch all team member preferences in a single call.
-          STEP 3: Call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
-          STEP 4: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a single final response.
+          STEP 2: Call `load_memory` EXACTLY ONCE with a query for dietary preferences and restrictions (e.g. query: "food preferences and dietary restrictions") to fetch all team member preferences in a single call.
+          STEP 3: Call `load_memory` EXACTLY ONCE with a query for saved favorite menus (e.g. query: "favorite menus") to fetch all previously saved favorite menus.
+          STEP 4: Call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
+          STEP 5: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a single final response.
+                  - Evaluate any saved favorite menus retrieved in Step 3 against all meeting attendees' dietary preferences retrieved in Step 2.
+                  - If a saved favorite menu is completely compliant with all attendees' dietary constraints, preferentially offer it as one of the 3 menu options and clearly label it as a "[Favorite Menu]".
+                  - If a saved favorite menu violates any attendee's dietary constraints, do NOT offer it as a menu option.
 
         CRITICAL EFFICIENCY & ANTI-REINVOCATION RULES:
-        - Do NOT invoke `scheduling_agent`, `load_memory`, or `execute_sql` more than once per user request.
+        - Do NOT invoke `scheduling_agent` or `execute_sql` more than once per user request. Call `load_memory` exactly twice (once in Step 2 for food preferences, once in Step 3 for favorite menus).
         - Do NOT perform N separate `load_memory` queries for each individual attendee; fetch all preferences in 1 query in Step 2.
-        - Do NOT execute exploratory SQL queries; issue exactly 1 filtered SQL query in Step 3.
+        - Do NOT execute exploratory SQL queries; issue exactly 1 filtered SQL query in Step 4.
         - At the end of the scheduling response:
           - List the team members who are included in the meeting.
           - Indicate any food preferences that were used to inform menu choices (e.g., "Food preferences considered: Alice (dairy allergy)").
-          - Inform the user that they can specify team member food preferences at any time, in a format like "<PERSON> is allergic to dairy." (where <PERSON> is a random choice from the team members at this meeting)
+          - Inform the user that they can specify team member food preferences at any time (e.g., "<PERSON> is allergic to dairy.") or save favorite menus (e.g., "Save Option 1 as a favorite.").
         """
         f"[CATERING_MENU_TABLE] = {CATERING_MENU_TABLE}"
     ),
@@ -115,6 +141,7 @@ luncher_agent = Agent(
         AgentTool(scheduling_agent_connector),
         bigquery_mcp_toolset,
         save_food_preference_tool,
+        save_favorite_menu_tool,
         load_memory,
     ]
 )
