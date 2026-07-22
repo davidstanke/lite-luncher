@@ -98,16 +98,32 @@ luncher_agent = Agent(
           STEP 1: Call `scheduling_agent` EXACTLY ONCE to determine the meeting time and attendee list.
           STEP 2: Call `load_memory` EXACTLY ONCE with a consolidated query (e.g. query: "food preferences and dietary restrictions") to fetch all team member preferences in a single call.
           STEP 3: Call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
-          STEP 4: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a single final response.
+          STEP 4: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a clean, well-formatted markdown response containing tables.
 
         CRITICAL EFFICIENCY & ANTI-REINVOCATION RULES:
         - Do NOT invoke `scheduling_agent`, `load_memory`, or `execute_sql` more than once per user request.
         - Do NOT perform N separate `load_memory` queries for each individual attendee; fetch all preferences in 1 query in Step 2.
         - Do NOT execute exploratory SQL queries; issue exactly 1 filtered SQL query in Step 3.
-        - At the end of the scheduling response:
-          - List the team members who are included in the meeting.
-          - Indicate any food preferences that were used to inform menu choices (e.g., "Food preferences considered: Alice (dairy allergy)").
-          - Inform the user that they can specify team member food preferences at any time, in a format like "<PERSON> is allergic to dairy." (where <PERSON> is a random choice from the team members at this meeting)
+
+        RESPONSE FORMATTING REQUIREMENT:
+        The final response MUST be formatted cleanly with Markdown tables as follows:
+        1. **Meeting Summary Table**:
+           | Key | Details |
+           | --- | --- |
+           | Date & Time | <Meeting Date & Time> |
+           | Attendees | <List of Attendees> |
+           | Dietary Restrictions Considered | <Dietary preferences applied, e.g. Alice (dairy allergy)> |
+
+        2. **Menu Options Table**:
+           | Option # | Main Course | Side Dishes | Beverage & Dessert | Dietary Tags | Price Breakdown |
+           | --- | --- | --- | --- | --- | --- |
+           | Option 1 | ... | ... | ... | ... | ... |
+           | Option 2 | ... | ... | ... | ... | ... |
+           | Option 3 | ... | ... | ... | ... | ... |
+
+        3. **Footer Tip**:
+           End with a single line informing the user how to update preferences, e.g.:
+           "💡 *Tip: You can update food preferences anytime by typing e.g., '<PERSON> is allergic to dairy.'*" (where <PERSON> is a random choice from the meeting attendees).
         """
         f"[CATERING_MENU_TABLE] = {CATERING_MENU_TABLE}"
     ),
