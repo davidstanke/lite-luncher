@@ -1,6 +1,6 @@
 # 🤖 Antigravity Code Review Agent
 
-An autonomous, Antigravity-powered code review agent designed to analyze GitHub Pull Requests for **code quality, maintainability, and readability**. Built with the Antigravity SDK (`google-genai`), `google-adk`, and `PyGithub`, and deployed as an Agent Runtime service on GCP Cloud Run.
+An autonomous, Antigravity-powered code review agent designed to analyze GitHub Pull Requests for **code quality, maintainability, and readability**. Built with the Antigravity SDK (`google-antigravity`), `google-adk`, and `PyGithub`, and deployed as an Agent Runtime service on GCP Cloud Run.
 
 ---
 

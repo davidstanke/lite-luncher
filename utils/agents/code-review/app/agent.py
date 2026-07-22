@@ -2,8 +2,9 @@ import os
 import logging
 from typing import List, Optional
 from github import Github, GithubException
-from google import genai
-from google.genai import types
+import google.auth
+import google.auth.transport.requests
+from google.antigravity import Agent, LocalAgentConfig
 from pydantic import BaseModel, Field
 
 logging.basicConfig(level=logging.INFO)
@@ -28,23 +29,8 @@ class CodeReviewAgent:
     def __init__(
         self,
         model_name: str = "gemini-3.6-flash",
-        project: Optional[str] = None,
-        location: str = "global"
     ):
         self.model_name = model_name
-        project = (
-            project
-            or os.environ.get("GCP_PROJECT")
-            or os.environ.get("GOOGLE_CLOUD_PROJECT")
-        )
-        location = (
-            location
-        )
-        self.client = genai.Client(
-            vertexai=True,
-            project=project,
-            location=location,
-        )
 
     def fetch_pr_patches(self, github_token: str, repo_full_name: str, pr_number: int):
         gh = Github(github_token)
@@ -62,7 +48,7 @@ class CodeReviewAgent:
                 })
         return repo, pull, patches
 
-    def review_pull_request(self, github_token: str, repo_full_name: str, pr_number: int) -> ReviewResult:
+    async def review_pull_request(self, github_token: str, repo_full_name: str, pr_number: int) -> ReviewResult:
         logger.info(f"Starting code review for {repo_full_name} PR #{pr_number}")
         repo, pull, patches = self.fetch_pr_patches(github_token, repo_full_name, pr_number)
 
@@ -76,17 +62,17 @@ class CodeReviewAgent:
             self._submit_github_review(pull, result)
             return result
 
+        system_instructions = (
+            "You are an expert lead software engineer conducting a code review for a GitHub Pull Request.\n\n"
+            "Focus your evaluation strictly on:\n"
+            "1. Code Quality: Correctness, logic flaws, edge cases, error handling.\n"
+            "2. Maintainability: Modularity, DRY principles, testability, clean architecture.\n"
+            "3. Readability: Naming conventions, style guide adherence, clean structure.\n\n"
+            "Keep the summary BRIEF AND CONCISE (2-4 sentences maximum)."
+        )
+
         prompt = f"""
-You are an expert lead software engineer conducting a code review for Pull Request #{pr_number} in {repo_full_name}.
-
-Focus your evaluation strictly on:
-1. **Code Quality**: Correctness, logic flaws, edge cases, error handling.
-2. **Maintainability**: Modularity, DRY principles, testability, clean architecture.
-3. **Readability**: Naming conventions, PEP 8/style guide adherence, clean structure.
-
-**Instructions**:
-- Keep the summary **BRIEF AND CONCISE** (2-4 sentences maximum).
-- Even if there are no inline suggestions or issues found, ALWAYS provide a brief summary (e.g. "LGTM! Changes are clean, well-structured, and ready to merge.").
+Conduct a code review for Pull Request #{pr_number} in {repo_full_name}.
 
 PR Title: {pull.title}
 PR Description: {pull.body or 'N/A'}
@@ -96,24 +82,52 @@ Modified Files & Diffs:
         for p in patches:
             prompt += f"\n--- File: {p['filename']} ---\n{p['patch']}\n"
 
-        prompt += """
-Provide a structured output containing:
-- 'event': 'APPROVE' if changes are well-written and maintainable, 'REQUEST_CHANGES' if there are critical bugs/security issues/major maintainability flaws, or 'COMMENT' for minor suggestions.
-- 'summary': Brief review summary (2-4 sentences max).
-- 'comments': List of inline diff comments specifying 'path', 'position' (the 1-indexed relative line count in the patch diff, NOT absolute file line), and 'body'. Return [] if no inline comments are required.
-"""
-
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if api_key:
+            logger.info("Using GEMINI_API_KEY for authentication.")
+            config = LocalAgentConfig(
+                model=self.model_name,
+                api_key=api_key,
+                system_instructions=system_instructions,
                 response_schema=ReviewResult,
-                temperature=0.2,
-            ),
-        )
+            )
+        else:
+            logger.info("GEMINI_API_KEY not set. Using Vertex AI with Application Default Credentials (ADC).")
+            try:
+                _, adc_project = google.auth.default(
+                    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                )
+            except Exception as e:
+                logger.warning(f"Failed to resolve ADC project: {e}")
+                adc_project = None
 
-        review_data = ReviewResult.model_validate_json(response.text)
+            project_id = (
+                adc_project
+                or os.environ.get("GCP_PROJECT")
+                or os.environ.get("GOOGLE_CLOUD_PROJECT")
+            )
+            location = os.environ.get("GCP_LOCATION", "us-central1")
+            model = "gemini-2.5-flash" if "3.6" in self.model_name else self.model_name
+
+            config = LocalAgentConfig(
+                model=model,
+                vertex=True,
+                project=project_id,
+                location=location,
+                system_instructions=system_instructions,
+                response_schema=ReviewResult,
+            )
+
+        async with Agent(config) as agent:
+            response = await agent.chat(prompt)
+            data = await response.structured_output()
+
+        if isinstance(data, dict):
+            review_data = ReviewResult.model_validate(data)
+        elif isinstance(data, ReviewResult):
+            review_data = data
+        else:
+            raise ValueError(f"Unexpected response type from structured_output: {type(data)}")
 
         self._submit_github_review(pull, review_data)
         return review_data

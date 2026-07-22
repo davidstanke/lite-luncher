@@ -28,9 +28,9 @@ def health_check():
 
 
 @app.post("/review", response_model=ReviewResult)
-def trigger_code_review(req: ReviewRequest):
+async def trigger_code_review(req: ReviewRequest):
     try:
-        result = agent.review_pull_request(
+        result = await agent.review_pull_request(
             github_token=req.github_token,
             repo_full_name=req.repo_full_name,
             pr_number=req.pr_number,
