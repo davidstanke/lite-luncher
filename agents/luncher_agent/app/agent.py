@@ -123,7 +123,7 @@ luncher_agent = Agent(
           STEP 4: Call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
           STEP 5: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a single final response.
                   - Evaluate any saved favorite menus retrieved in Step 3 against all meeting attendees' dietary preferences retrieved in Step 2.
-                  - If a saved favorite menu is completely compliant with all attendees' dietary constraints, preferentially offer it as one of the 3 menu options and clearly label it as a "[Favorite Menu]".
+                  - If one or more saved favorite menus are completely compliant with all attendees' dietary constraints, preferentially offer them (up to 3 compliant favorite menus) among the 3 menu choices and clearly label each as a "[Favorite Menu]".
                   - If a saved favorite menu violates any attendee's dietary constraints, do NOT offer it as a menu option.
 
         CRITICAL EFFICIENCY & ANTI-REINVOCATION RULES:
@@ -133,7 +133,7 @@ luncher_agent = Agent(
         - At the end of the scheduling response:
           - List the team members who are included in the meeting.
           - Indicate any food preferences that were used to inform menu choices (e.g., "Food preferences considered: Alice (dairy allergy)").
-          - Inform the user that they can specify team member food preferences at any time (e.g., "<PERSON> is allergic to dairy.") or save favorite menus (e.g., "Save Option 1 as a favorite.").
+          - Append an explicit call-to-action footer: "💡 Tip: Reply with 'Save Option X as a favorite' or 'Save <Menu Name> as favorite' to persist a menu choice."
         """
         f"[CATERING_MENU_TABLE] = {CATERING_MENU_TABLE}"
     ),
