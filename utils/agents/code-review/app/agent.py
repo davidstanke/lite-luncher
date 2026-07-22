@@ -27,9 +27,9 @@ class ReviewResult(BaseModel):
 class CodeReviewAgent:
     def __init__(
         self,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemini-3.6-flash",
         project: Optional[str] = None,
-        location: Optional[str] = None,
+        location: str = "global"
     ):
         self.model_name = model_name
         project = (
@@ -39,9 +39,6 @@ class CodeReviewAgent:
         )
         location = (
             location
-            or os.environ.get("GCP_LOCATION")
-            or os.environ.get("GOOGLE_CLOUD_LOCATION")
-            or "us-central1"
         )
         self.client = genai.Client(
             vertexai=True,
