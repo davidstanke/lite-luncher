@@ -1,4 +1,4 @@
-# Lite luncher! is a variant of Luncher. Everything below is probably false now.
+# Lite Luncher! is a variant of Luncher. Everything below is probably false now.
 
 ---
 
