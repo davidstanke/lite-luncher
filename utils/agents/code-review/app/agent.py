@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 from typing import List, Optional
@@ -68,7 +69,8 @@ class CodeReviewAgent:
             "1. Code Quality: Correctness, logic flaws, edge cases, error handling.\n"
             "2. Maintainability: Modularity, DRY principles, testability, clean architecture.\n"
             "3. Readability: Naming conventions, style guide adherence, clean structure.\n\n"
-            "Keep the summary BRIEF AND CONCISE (2-4 sentences maximum)."
+            "Keep the summary BRIEF AND CONCISE (2-4 sentences maximum).\n"
+            "Output strictly valid JSON matching the ReviewResult schema with keys: event, summary, comments. Do not include markdown code block formatting."
         )
 
         prompt = f"""
@@ -121,13 +123,31 @@ Modified Files & Diffs:
         async with Agent(config) as agent:
             response = await agent.chat(prompt)
             data = await response.structured_output()
+            raw_text = await response.text()
 
+        review_data = None
         if isinstance(data, dict):
             review_data = ReviewResult.model_validate(data)
         elif isinstance(data, ReviewResult):
             review_data = data
-        else:
-            raise ValueError(f"Unexpected response type from structured_output: {type(data)}")
+        elif raw_text:
+            cleaned_text = raw_text.strip()
+            if cleaned_text.startswith("```"):
+                lines = cleaned_text.splitlines()
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                cleaned_text = "\n".join(lines).strip()
+            try:
+                parsed_json = json.loads(cleaned_text)
+                if isinstance(parsed_json, dict):
+                    review_data = ReviewResult.model_validate(parsed_json)
+            except Exception as parse_err:
+                logger.warning(f"Failed to parse raw text response as JSON: {parse_err}")
+
+        if not review_data:
+            raise ValueError(f"Failed to parse structured output from model response. Raw text: {raw_text[:300]!r}")
 
         self._submit_github_review(pull, review_data)
         return review_data
