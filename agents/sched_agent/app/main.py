@@ -148,8 +148,7 @@ async def load_overlaps_callback(callback_context: CallbackContext) -> None:
 client_kwargs = {"enterprise": True}
 if os.getenv("GOOGLE_CLOUD_PROJECT"):
     client_kwargs["project"] = os.getenv("GOOGLE_CLOUD_PROJECT")
-if os.getenv("GOOGLE_CLOUD_LOCATION"):
-    client_kwargs["location"] = os.getenv("GOOGLE_CLOUD_LOCATION")
+client_kwargs["location"] = "global"
 
 
 # Define the ADK Agent

@@ -4,10 +4,11 @@ import google.auth
 from google.auth.transport.requests import Request
 from google.adk.agents import Agent
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
-from google.adk.tools import AgentTool, McpToolset, FunctionTool, load_memory, ToolContext
+from google.adk.tools import AgentTool, McpToolset, FunctionTool, load_memory, ToolContext, BaseTool
 from google.adk.tools.mcp_tool import StreamableHTTPConnectionParams
 from google.adk.memory.memory_entry import MemoryEntry
 from google.genai.types import Content, Part
+
 
 # Load environment variables
 load_dotenv()
@@ -81,7 +82,7 @@ luncher_agent = Agent(
     model="gemini-3.6-flash",
     name="luncher_agent",
     description="The centralized Luncher Orchestrator that coordinates strategy-aligned team lunch meetings.",
-    instruction=(       
+    instruction=(
         """
         You are the central Luncher Orchestrator Agent. Your job is to act as the primary user-facing frontend
         to coordinate strategy-aligned team lunch meetings.
@@ -89,11 +90,14 @@ luncher_agent = Agent(
         ROUTING AND PREFERENCE SAVING PROTOCOL:
         - If the user prompt is a user preference (e.g., "Alice is allergic to dairy" or "Bob dislikes spicy food"), call the `save_food_preference` tool to save it to memory, then dynamically thank the user and confirm the saved preference. Do NOT perform any scheduling, meeting coordination, or menu queries in this case.
 
+        PROGRESS REPORTING PROTOCOL:
+        - Before invoking each tool, output a single line to the user updating them on your status (e.g., "📅 Checking team member availability...", "🥗 Fetching saved dietary preferences...", "🍽️ Searching and filtering catering menu options...", or "💾 Saving food preference...").
+
         COORDINATION & CATERING PIPELINE (EXECUTE IN EXACTLY 4 SEQUENTIAL STEPS):
-        - If the user request is a scheduling request, follow this exact linear execution pipeline. In each step, output a very brief (1 line) emoji-prefixed status message BEFORE calling the tool:
-          STEP 1: Output "📅 Checking team member availability..." and call `scheduling_agent` EXACTLY ONCE to determine the meeting time and attendee list.
-          STEP 2: Output "🥗 Fetching saved dietary preferences..." and call `load_memory` EXACTLY ONCE with a consolidated query (e.g. query: "food preferences and dietary restrictions") to fetch all team member preferences in a single call.
-          STEP 3: Output "🍽️ Searching and filtering catering menu options..." and call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
+        - If the user request is a scheduling request, follow this exact linear execution pipeline:
+          STEP 1: Call `scheduling_agent` EXACTLY ONCE to determine the meeting time and attendee list.
+          STEP 2: Call `load_memory` EXACTLY ONCE with a consolidated query (e.g. query: "food preferences and dietary restrictions") to fetch all team member preferences in a single call.
+          STEP 3: Call `execute_sql` EXACTLY ONCE on BigQuery table [CATERING_MENU_TABLE]. Use SQL WHERE clauses based on the dietary preferences retrieved in Step 2 to directly filter out unsuitable menu items.
           STEP 4: Synthesize the schedule and 3 distinct tailored menu options (main, 1-2 sides, drinks, dessert) with pricing breakdowns into a single final response.
 
         CRITICAL EFFICIENCY & ANTI-REINVOCATION RULES:
