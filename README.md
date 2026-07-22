@@ -1,3 +1,7 @@
+# Lite luncher! is a variant of Luncher. Everything below is probably false now.
+
+---
+
 # 🍔 Luncher
 Luncher is an application that helps people in an organization schedule catered team meetings. It finds available times, plans menus, and builds meeting agendas reflecting organizational priorities.
 
