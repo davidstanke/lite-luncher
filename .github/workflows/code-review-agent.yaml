@@ -29,7 +29,7 @@ jobs:
           
           PAYLOAD=$(jq -n \
             --arg repo "${{ github.repository }}" \
-            --argpr "${{ github.event.pull_request.number }}" \
+            --arg pr "${{ github.event.pull_request.number }}" \
             --arg token "${{ secrets.GITHUB_TOKEN }}" \
             '{repo_full_name: $repo, pr_number: ($pr | tonumber), github_token: $token}')
             
